@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reservas de Laboratorios</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div id="global-filtered-background"></div>
+    <div id="form-background-overlay" class="hidden"></div>
+
+    <div id="confirmation-message" class="hidden">
+        Su reservación fue agendada
+    </div>
+
+    <button id="asistencia-btn" class="top-right-btn">Citas de Usuario</button>
+
+    <div id="auth-main-container">
+        <div id="auth-toggle-switch">
+            <button id="switch-to-login" class="active">Sistema de Reservas</button>
+            <button id="switch-to-admin-registration">Registro de Admin</button>
+        </div>
+
+        <div id="login-container">
+            <h1>Iniciar Sesión</h1>
+            <form id="login-form">
+                <label for="matricula">Matrícula:</label>
+                <input type="text" id="matricula" name="matricula" required>
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+                <button type="submit">Entrar</button>
+            </form>
+            <p id="login-message" style="color: red;"></p>
+        </div>
+
+        <div id="admin-registration-container" class="hidden">
+            <h1>Registro de Nuevo Admin</h1>
+            <form id="admin-registration-form">
+                <label for="new-admin-matricula">Nueva Matrícula de Admin:</label>
+                <input type="text" id="new-admin-matricula" name="new-admin-matricula" required>
+                <label for="new-admin-password">Contraseña para Nuevo Admin:</label>
+                <input type="password" id="new-admin-password" name="new-admin-password" required>
+                <label for="registration-master-password">Contraseña de Registro (Master):</label>
+                <input type="password" id="registration-master-password" name="registration-master-password" required>
+                <button type="submit">Registrar Admin</button>
+            </form>
+            <p id="admin-registration-message" style="color: red;"></p>
+        </div>
+    </div>
+
+
+    <div id="asistencia-content" class="hidden full-screen-panel">
+        <div class="panel-inner-content">
+            <h2>Citas de Usuario</h2>
+            <div id="asistencia-search-container">
+                <label for="asistencia-id-input">ID de Reserva:</label>
+                <input type="text" id="asistencia-id-input" placeholder="Introduce el ID de la reserva" required>
+                <button id="search-asistencia-btn">Buscar y Confirmar Asistencia</button>
+                <p id="asistencia-message" style="color: green;"></p>
+            </div>
+            <div id="found-cita-details" class="hidden">
+                <h3>Detalles de la Cita:</h3>
+                <ul id="asistencia-cita-details-list"></ul>
+                <button id="confirm-asistencia-btn" class="hidden">Confirmar Asistencia</button>
+            </div>
+            <button id="back-to-login-from-asistencia" class="back-btn">Volver al Inicio de Sesión</button>
+        </div>
+    </div>
+
+    <div id="enfermeria-form-container" class="hidden full-screen-panel lab-reservation-form-container">
+        <div class="panel-inner-content">
+            <h2>Reserva Laboratorio Enfermería</h2>
+            <form id="enfermeria-reservation-form" data-lab-name="Laboratorio Enfermería">
+                <label for="enfermeria-res-user">Usuario:</label>
+                <input type="text" id="enfermeria-res-user" name="res-user" required>
+
+                <label for="enfermeria-res-area">Área de Departamento o Escuela:</label>
+                <select id="enfermeria-res-area" name="res-area" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="Coordinación de Educación Continua y Certificación">Coordinación de Educación Continua y Certificación</option>
+                    <option value="CUA">CUA</option>
+                    <option value="Difusión Cultural">Difusión Cultural</option>
+                    <option value="Dirección General Académica">Dirección General Académica</option>
+                    <option value="Dirección General de Desarrollo Institucional">Dirección General de Desarrollo Institucional</option>
+                    <option value="Escuela de Criminología">Escuela de Criminología</option>
+                    <option value="Escuela de Ciencias de la Salud">Escuela de Ciencias de la Salud</option>
+                    <option value="Escuela de Negocios, Turismo y Humanidades">Escuela de Negocios, Turismo y Humanidades</option>
+                    <option value="Idiomas">Idiomas</option>
+                    <option value="Mercadotecnia y Comunicación">Mercadotecnia y Comunicación</option>
+                    <option value="Lic. Administración de Empresas Turísticas">Lic. Administración de Empresas Turísticas</option>
+                    <option value="Lic. Ciencias del Deporte">Lic. Ciencias del Deporte</option>
+                    <option value="Lic. Criminología">Lic. Criminología</option>
+                    <option value="Lic. Criminología y Criminalística">Lic. Criminología y Criminalística</option>
+                    <option value="Lic. Derecho">Lic. Derecho</option>
+                    <option value="Lic. Fisioterapia">Lic. Fisioterapia</option>
+                    <option value="Lic. Neurociencias">Lic. Neurociencias</option>
+                    <option value="Lic. Pedagogía">Lic. Pedagogía</option>
+                    <option value="Lic. Psicología">Lic. Psicología</option>
+                    <option value="Lic. Trabajo Social">Lic. Trabajo Social</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Promoción y Publicidad">Promoción y Publicidad</option>
+                    <option value="Rectoría">Rectoría</option>
+                    <option value="Servicios Escolares">Servicios Escolares</option>
+                    <option value="Vida Interior">Vida Interior</option>
+                    <option value="Vinculación">Vinculación</option>
+                    <option value="Gestión del Campus">Gestión del Campus</option>
+                    <option value="Coordinación de Activación Física y Deportes">Coordinación de Activación Física y Deportes</option>
+                    <option value="Coordinación de Inglés e Idiomas">Coordinación de Inglés e Idiomas</option>
+                    <option value="Coordinación de Innovación Curricular">Coordinación de Innovación Curricular</option>
+                    <option value="Coordinación de Formación Académica y Vida Interior">Coordinación de Formación Académica y Vida Interior</option>
+                    <option value="Coordinación de Relaciones Institucionales">Coordinación de Relaciones Institucionales</option>
+                    <option value="Coordinación Internacionalización y Movilidad">Coordinación Internacionalización y Movilidad</option>
+                </select>
+
+                <label for="enfermeria-areas-to-use">Área(s) a Usar:</label>
+                <select id="enfermeria-areas-to-use" name="areas-to-use" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="R.P.B.I. R.S.">R.P.B.I. R.S.</option>
+                    <option value="Anatomía y Fisiología">Anatomía y Fisiología</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Laboratorio para la Promoción y Educación para la Salud">Laboratorio para la Promoción y Educación para la Salud</option>
+                    <option value="Nutrición y Dietoterapia">Nutrición y Dietoterapia</option>
+                    <option value="Fundamentos de Enfermería">Fundamentos de Enfermería</option>
+                    <option value="Farmacología">Farmacología</option>
+                    <option value="Cuarto Séptico">Cuarto Séptico</option>
+                    <option value="Recuperación">Recuperación</option>
+                    <option value="Pre-anestesia">Pre-anestesia</option>
+                    <option value="Pre-lavado">Pre-lavado</option>
+                    <option value="Técnica de Aislamiento">Técnica de Aislamiento</option>
+                    <option value="Ginecología, Tococirugía y Expulsión">Ginecología, Tococirugía y Expulsión</option>
+                    <option value="Quirófano Cirugía">Quirófano Cirugía</option>
+                    <option value="Central de Equipos y Esterilización C.E.Y.E.">Central de Equipos y Esterilización C.E.Y.E.</option>
+                </select>
+
+                <label for="enfermeria-res-num-people">Número de Personas:</label>
+                <input type="number" id="enfermeria-res-num-people" name="res-num-people" min="1" required>
+
+                <label for="enfermeria-res-date">Fecha:</label>
+                <input type="date" id="enfermeria-res-date" name="res-date" required>
+
+                <label for="enfermeria-res-start-time">Hora de inicio:</label>
+                <input type="time" id="enfermeria-res-start-time" name="res-start-time" required>
+
+                <label for="enfermeria-res-end-time">Hora de fin:</label>
+                <input type="time" id="enfermeria-res-end-time" name="res-end-time" required>
+
+                <p>Horas Agendadas: <span id="enfermeria-hours-display">0</span></p>
+
+                <label for="enfermeria-res-phone">Número de teléfono:</label>
+                <input type="tel" id="enfermeria-res-phone" name="res-phone" pattern="[0-9]{10}" placeholder="Ej: 5512345678" required>
+
+                <label for="enfermeria-res-email">Correo electrónico:</label>
+                <input type="email" id="enfermeria-res-email" name="res-email" required>
+
+                <label for="enfermeria-res-materials">Materiales a ocupar:</label>
+                <textarea id="enfermeria-res-materials" name="res-materials" rows="4" required></textarea>
+
+                <label for="enfermeria-res-event-type">Tipo de Evento:</label>
+                <input type="text" id="enfermeria-res-event-type" name="res-event-type" required>
+
+
+                <button type="submit">Confirmar Reserva</button>
+                <button type="button" class="back-to-main-btn back-btn">Volver</button>
+            </form>
+            <p id="enfermeria-reservation-message" class="reservation-message"></p>
+        </div>
+    </div>
+
+    <div id="psicologia-form-container" class="hidden full-screen-panel lab-reservation-form-container">
+        <div class="panel-inner-content">
+            <h2>Reserva Laboratorio Psicología</h2>
+            <form id="psicologia-reservation-form" data-lab-name="Laboratorio Psicología">
+                <label for="psicologia-res-user">Usuario:</label>
+                <input type="text" id="psicologia-res-user" name="res-user" required>
+
+                <label for="psicologia-res-area">Área de Departamento o Escuela:</label>
+                <select id="psicologia-res-area" name="res-area" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="Coordinación de Educación Continua y Certificación">Coordinación de Educación Continua y Certificación</option>
+                    <option value="CUA">CUA</option>
+                    <option value="Difusión Cultural">Difusión Cultural</option>
+                    <option value="Dirección General Académica">Dirección General Académica</option>
+                    <option value="Dirección General de Desarrollo Institucional">Dirección General de Desarrollo Institucional</option>
+                    <option value="Escuela de Criminología">Escuela de Criminología</option>
+                    <option value="Escuela de Ciencias de la Salud">Escuela de Ciencias de la Salud</option>
+                    <option value="Escuela de Negocios, Turismo y Humanidades">Escuela de Negocios, Turismo y Humanidades</option>
+                    <option value="Idiomas">Idiomas</option>
+                    <option value="Mercadotecnia y Comunicación">Mercadotecnia y Comunicación</option>
+                    <option value="Lic. Administración de Empresas Turísticas">Lic. Administración de Empresas Turísticas</option>
+                    <option value="Lic. Ciencias del Deporte">Lic. Ciencias del Deporte</option>
+                    <option value="Lic. Criminología">Lic. Criminología</option>
+                    <option value="Lic. Criminología y Criminalística">Lic. Criminología y Criminalística</option>
+                    <option value="Lic. Derecho">Lic. Derecho</option>
+                    <option value="Lic. Fisioterapia">Lic. Fisioterapia</option>
+                    <option value="Lic. Neurociencias">Lic. Neurociencias</option>
+                    <option value="Lic. Pedagogía">Lic. Pedagogía</option>
+                    <option value="Lic. Psicología">Lic. Psicología</option>
+                    <option value="Lic. Trabajo Social">Lic. Trabajo Social</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Promoción y Publicidad">Promoción y Publicidad</option>
+                    <option value="Rectoría">Rectoría</option>
+                    <option value="Servicios Escolares">Servicios Escolares</option>
+                    <option value="Vida Interior">Vida Interior</option>
+                    <option value="Vinculación">Vinculación</option>
+                    <option value="Gestión del Campus">Gestión del Campus</option>
+                    <option value="Coordinación de Activación Física y Deportes">Coordinación de Activación Física y Deportes</option>
+                    <option value="Coordinación de Inglés e Idiomas">Coordinación de Inglés e Idiomas</option>
+                    <option value="Coordinación de Innovación Curricular">Coordinación de Innovación Curricular</option>
+                    <option value="Coordinación de Formación Académica y Vida Interior">Coordinación de Formación Académica y Vida Interior</option>
+                    <option value="Coordinación de Relaciones Institucionales">Coordinación de Relaciones Institucionales</option>
+                    <option value="Coordinación Internacionalización y Movilidad">Coordinación Internacionalización y Movilidad</option>
+                </select>
+
+                <label for="psicologia-areas-to-use">Área(s) a Usar:</label>
+                <select id="psicologia-areas-to-use" name="areas-to-use" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="Consultorio 7 - Terapia Individual y de pareja">Consultorio 7 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 8 - Terapia Individual y de pareja">Consultorio 8 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 9 - Terapia Individual y de pareja">Consultorio 9 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 10 - Terapia Individual y de pareja">Consultorio 10 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 11 - Terapia Individual y de pareja">Consultorio 11 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 6 - Terapia Individual y de pareja">Consultorio 6 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 5 - Terapia Individual y de pareja">Consultorio 5 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 4 - Terapia Individual y de pareja">Consultorio 4 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 3 - Terapia Individual y de pareja">Consultorio 3 - Terapia Individual y de pareja</option>
+                    <option value="Consultorio 2 - Terapia Infantil">Consultorio 2 - Terapia Infantil</option>
+                    <option value="Consultorio 1 - Terapia Infantil">Consultorio 1 - Terapia Infantil</option>
+                    <option value="Terapia Grupal">Terapia Grupal</option>
+                    <option value="Grabación">Grabación</option>
+                    <option value="Cámara de Gesell">Cámara de Gesell</option>
+                    <option value="Sala de Audiencia">Sala de Audiencia</option>
+                </select>
+
+                <label for="psicologia-res-num-people">Número de Personas:</label>
+                <input type="number" id="psicologia-res-num-people" name="res-num-people" min="1" required>
+
+                <label for="psicologia-res-date">Fecha:</label>
+                <input type="date" id="psicologia-res-date" name="res-date" required>
+
+                <label for="psicologia-res-start-time">Hora de inicio:</label>
+                <input type="time" id="psicologia-res-start-time" name="res-start-time" required>
+
+                <label for="psicologia-res-end-time">Hora de fin:</label>
+                <input type="time" id="psicologia-res-end-time" name="res-end-time" required>
+
+                <p>Horas Agendadas: <span id="psicologia-hours-display">0</span></p>
+
+                <label for="psicologia-res-phone">Número de teléfono:</label>
+                <input type="tel" id="psicologia-res-phone" name="res-phone" pattern="[0-9]{10}" placeholder="Ej: 5512345678" required>
+
+                <label for="psicologia-res-email">Correo electrónico:</label>
+                <input type="email" id="psicologia-res-email" name="res-email" required>
+
+                <label for="psicologia-res-materials">Materiales a ocupar:</label>
+                <textarea id="psicologia-res-materials" name="res-materials" rows="4" required></textarea>
+
+                <label for="psicologia-res-event-type">Tipo de Evento:</label>
+                <input type="text" id="psicologia-res-event-type" name="res-event-type" required>
+
+                <button type="submit">Confirmar Reserva</button>
+                <button type="button" class="back-to-main-btn back-btn">Volver</button>
+            </form>
+            <p id="psicologia-reservation-message" class="reservation-message"></p>
+        </div>
+    </div>
+
+    <div id="criminalistica-form-container" class="hidden full-screen-panel lab-reservation-form-container">
+        <div class="panel-inner-content">
+            <h2>Reserva Laboratorio Criminalística</h2>
+            <form id="criminalistica-reservation-form" data-lab-name="Laboratorio Criminalística">
+                <label for="criminalistica-res-user">Usuario:</label>
+                <input type="text" id="criminalistica-res-user" name="res-user" required>
+
+                <label for="criminalistica-res-area">Área de Departamento o Escuela:</label>
+                <select id="criminalistica-res-area" name="res-area" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="Coordinación de Educación Continua y Certificación">Coordinación de Educación Continua y Certificación</option>
+                    <option value="CUA">CUA</option>
+                    <option value="Difusión Cultural">Difusión Cultural</option>
+                    <option value="Dirección General Académica">Dirección General Académica</option>
+                    <option value="Dirección General de Desarrollo Institucional">Dirección General de Desarrollo Institucional</option>
+                    <option value="Escuela de Criminología">Escuela de Criminología</option>
+                    <option value="Escuela de Ciencias de la Salud">Escuela de Ciencias de la Salud</option>
+                    <option value="Escuela de Negocios, Turismo y Humanidades">Escuela de Negocios, Turismo y Humanidades</option>
+                    <option value="Idiomas">Idiomas</option>
+                    <option value="Mercadotecnia y Comunicación">Mercadotecnia y Comunicación</option>
+                    <option value="Lic. Administración de Empresas Turísticas">Lic. Administración de Empresas Turísticas</option>
+                    <option value="Lic. Ciencias del Deporte">Lic. Ciencias del Deporte</option>
+                    <option value="Lic. Criminología">Lic. Criminología</option>
+                    <option value="Lic. Criminología y Criminalística">Lic. Criminología y Criminalística</option>
+                    <option value="Lic. Derecho">Lic. Derecho</option>
+                    <option value="Lic. Fisioterapia">Lic. Fisioterapia</option>
+                    <option value="Lic. Neurociencias">Lic. Neurociencias</option>
+                    <option value="Lic. Pedagogía">Lic. Pedagogía</option>
+                    <option value="Lic. Psicología">Lic. Psicología</option>
+                    <option value="Lic. Trabajo Social">Lic. Trabajo Social</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Promoción y Publicidad">Promoción y Publicidad</option>
+                    <option value="Rectoría">Rectoría</option>
+                    <option value="Servicios Escolares">Servicios Escolares</option>
+                    <option value="Vida Interior">Vida Interior</option>
+                    <option value="Vinculación">Vinculación</option>
+                    <option value="Gestión del Campus">Gestión del Campus</option>
+                    <option value="Coordinación de Activación Física y Deportes">Coordinación de Activación Física y Deportes</option>
+                    <option value="Coordinación de Inglés e Idiomas">Coordinación de Inglés e Idiomas</option>
+                    <option value="Coordinación de Innovación Curricular">Coordinación de Innovación Curricular</option>
+                    <option value="Coordinación de Formación Académica y Vida Interior">Coordinación de Formación Académica y Vida Interior</option>
+                    <option value="Coordinación de Relaciones Institucionales">Coordinación de Relaciones Institucionales</option>
+                    <option value="Coordinación Internacionalización y Movilidad">Coordinación Internacionalización y Movilidad</option>
+                </select>
+
+                <label for="criminalistica-areas-to-use">Área(s) a Usar:</label>
+                <select id="criminalistica-areas-to-use" name="areas-to-use" required>
+                    <option value="">Selecciona un área</option>
+                    <option value="Cocina Auxiliar">Cocina Auxiliar</option>
+                    <option value="Cocina Principal">Cocina Principal</option>
+                    <option value="Gastronomía">Gastronomía</option>
+                    <option value="Cubo de innovación">Cubo de innovación</option>
+                    <option value="Física-Biología">Física-Biología</option>
+                    <option value="Químico">Químico</option>
+                    <option value="Salón de Eventos - Bar">Salón de Eventos - Bar</option>
+                    <option value="Estacionamiento">Estacionamiento</option>
+                    <option value="Pasillos - otro">Pasillos - otro</option>
+                </select>
+
+                <label for="criminalistica-res-num-people">Número de Personas:</label>
+                <input type="number" id="criminalistica-res-num-people" name="res-num-people" min="1" required>
+
+                <label for="criminalistica-res-date">Fecha:</label>
+                <input type="date" id="criminalistica-res-date" name="res-date" required>
+
+                <label for="criminalistica-res-start-time">Hora de inicio:</label>
+                <input type="time" id="criminalistica-res-start-time" name="res-start-time" required>
+
+                <label for="criminalistica-res-end-time">Hora de fin:</label>
+                <input type="time" id="criminalistica-res-end-time" name="res-end-time" required>
+
+                <p>Horas Agendadas: <span id="criminalistica-hours-display">0</span></p>
+
+                <label for="criminalistica-res-phone">Número de teléfono:</label>
+                <input type="tel" id="criminalistica-res-phone" name="res-phone" pattern="[0-9]{10}" placeholder="Ej: 5512345678" required>
+
+                <label for="criminalistica-res-email">Correo electrónico:</label>
+                <input type="email" id="criminalistica-res-email" name="res-email" required>
+
+                <label for="criminalistica-res-materials">Materiales a ocupar:</label>
+                <textarea id="criminalistica-res-materials" name="res-materials" rows="4" required></textarea>
+
+                <label for="criminalistica-res-event-type">Tipo de Evento:</label>
+                <input type="text" id="criminalistica-res-event-type" name="res-event-type" required>
+
+                <button type="submit">Confirmar Reserva</button>
+                <button type="button" class="back-to-main-btn back-btn">Volver</button>
+            </form>
+            <p id="criminalistica-reservation-message" class="reservation-message"></p>
+        </div>
+    </div>
+
+    <div id="main-content" class="hidden">
+        <aside id="sidebar">
+            <h2>Laboratorio</h2>
+            <ul>
+                <li><a href="#" data-lab="enfermeria">Laboratorio Enfermería</a></li>
+                <li><a href="#" data-lab="psicologia">Laboratorio Psicología</a></li>
+                <li><a href="#" data-lab="criminalistica">Laboratorio Criminalística</a></li>
+            </ul>
+
+            <h2 class="sidebar-heading">Gestión de Reservas</h2>
+            <ul>
+                <li><a href="#" data-section="citas">Citas</a></li>
+                <li><a href="#" data-section="estadisticas">Estadísticas</a></li>
+            </ul>
+        </aside>
+
+        <main id="content-area">
+            <button id="logout-btn" class="logout-btn hidden">Cerrar Sesión</button>
+
+            <div id="welcome-section" class="initial-content content-panel">
+                <div id="welcome-message-text">
+                    <h1>Bienvenido al Sistema de Reservas</h1>
+                    <p>Selecciona una opción del menú de la izquierda.</p>
+                </div>
+            </div>
+
+            <div id="citas-content" class="hidden section-content content-panel">
+                <h2><span id="current-citas-name">Citas</span></h2>
+                <div id="citas-password-prompt" class="password-prompt">
+                    <label for="citas-password">Introduce tu contraseña:</label>
+                    <input type="password" id="citas-password">
+                    <button id="citas-password-submit">Acceder a Citas</button>
+                    <p id="citas-password-message" style="color: red;"></p>
+                </div>
+                <div id="citas-list-container" class="hidden">
+                    <div class="citas-filter-container">
+                        <label for="lab-filter">Filtrar por Laboratorio:</label>
+                        <select id="lab-filter">
+                            <option value="all">Todos los Laboratorios</option>
+                            <option value="Laboratorio Enfermería">Laboratorio Enfermería</option>
+                            <option value="Laboratorio Psicología">Laboratorio Psicología</option>
+                            <option value="Laboratorio Criminalística">Laboratorio Criminalística</option>
+                        </select>
+                    </div>
+                    <p>Aquí se mostrarían tus citas o un listado de reservas.</p>
+                    <ul id="citas-list">
+                    </ul>
+                    <p id="no-citas-message">No hay citas registradas.</p>
+                </div>
+            </div>
+
+            <div id="estadisticas-content" class="hidden section-content content-panel">
+                <h2><span id="current-estadisticas-name">Estadísticas de Reserva de Laboratorios</span></h2>
+                <div class="chart-container">
+                    <canvas id="labReservationChart"></canvas>
+                </div>
+                <h3>Horas de Uso por Laboratorio</h3>
+                <div class="chart-container">
+                    <canvas id="labHoursChart"></canvas>
+                </div>
+                <h3>Número de Personas por Laboratorio</h3>
+                <div class="chart-container">
+                    <canvas id="labPeopleChart"></canvas>
+                </div>
+                <p>Aquí se mostrarían gráficos o datos estadísticos sobre las reservas.</p>
+            </div>
+        </main>
+    </div>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/dom-elements.js"></script>
+    <script src="js/ui-management.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/reservation-forms.js"></script>
+    <script src="js/asistencia.js"></script>
+    <script src="js/citas-management.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
